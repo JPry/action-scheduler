@@ -29,11 +29,13 @@ class ActionScheduler_AdminView {
 	 */
 	public function init() {
 
-		if ( is_admin() && ( ( defined( 'WCS_DEBUG' ) && true == WCS_DEBUG ) || ( defined( 'WP_DEBUG' ) && true == WP_DEBUG ) ) && ( ! defined( 'DOING_AJAX' ) || false == DOING_AJAX ) ) {
-			add_filter( 'action_scheduler_post_type_args', array( self::instance(), 'action_scheduler_post_type_args' ) );
-		}
-
 		self::$admin_url = admin_url( 'edit.php?post_type=' . ActionScheduler_wpPostStore::POST_TYPE );
+
+		add_filter( 'woocommerce_admin_status_tabs', array( self::instance(), 'add_status_tab' ) );
+
+		add_action( 'woocommerce_admin_status_content_scheduled-actions', array( self::instance(), 'output_scheduled_actions' ) );
+
+		add_filter( 'action_scheduler_post_type_args', array( self::instance(), 'action_scheduler_post_type_args' ) );
 
 		add_filter( 'views_edit-' . ActionScheduler_wpPostStore::POST_TYPE, array( self::instance(), 'list_table_views' ) );
 
@@ -58,10 +60,43 @@ class ActionScheduler_AdminView {
 		add_filter( 'posts_search', array( self::instance(), 'search_post_password' ), 10, 2 );
 	}
 
+	/**
+	 * Add a Scheduled Actios tab to the WooCommerce > System Status page's tabs.
+	 *
+	 * @since 1.6.0
+	 */
+	public function add_status_tab( $tabs ) {
+
+		$tabs['scheduled-actions'] = __( 'Scheduled Actions', 'action-scheduler' );
+
+		return $tabs;
+	}
+
+	public function output_scheduled_actions() {
+
+		$actions_table = _get_list_table( 'WP_Posts_List_Table', array( 'screen' => 'scheduled-action' ) );
+
+		$actions_table->prepare_items();
+		$actions_table->messages();
+		$actions_table->views(); ?>
+
+	<form id="scheduled-action-search" action="" method="get">
+		<?php $actions_table->search_box( __( 'Search Scheduled Actions', 'action-scheduler' ), 'scheduled-action' ); ?>
+		<input type="hidden" name="page" value="wc-status" />
+		<input type="hidden" name="tab" value="scheduled-actions" />
+		<input type="hidden" name="post_status" value="<?php echo ! empty( $_REQUEST['post_status'] ) ? esc_attr( $_REQUEST['post_status'] ) : 'all'; ?>" />
+	</form>
+	<form id="scheduled-action-filter" action="" method="get">
+		<?php $actions_table->display(); ?>
+	</form>
+</div>
+<?php
+	}
+
 	public function action_scheduler_post_type_args( $args ) {
 		return array_merge( $args, array(
 			'show_ui'           => true,
-			'show_in_menu'      => 'tools.php',
+			'show_in_menu'      => false,
 			'show_in_admin_bar' => false,
 		) );
 	}
