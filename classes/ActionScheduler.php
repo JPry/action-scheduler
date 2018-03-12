@@ -78,7 +78,6 @@ abstract class ActionScheduler {
 	 *
 	 * @static
 	 * @param string $plugin_file
-	 * @return void
 	 */
 	public static function init( $plugin_file ) {
 		self::$plugin_file = $plugin_file;
@@ -117,4 +116,3 @@ abstract class ActionScheduler {
 		return as_get_datetime_object( $when, $timezone );
 	}
 }
- 
